@@ -7,8 +7,8 @@ android {
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion rootProject.ext.sdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.0.1"
     }
 }
 
@@ -43,7 +43,7 @@ project.afterEvaluate {
             aar(MavenPublication) {
                 groupId 'com.vectorform.vfandroid'
                 artifactId 'photoview'
-                version '1.0.0'
+                version '1.0.1'
 
                 artifact bundleReleaseAar
                 artifact androidJavadocsJar

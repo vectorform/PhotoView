@@ -93,6 +93,7 @@ public class PhotoViewAttacher implements View.OnTouchListener,
     private int mVerticalScrollEdge = VERTICAL_EDGE_BOTH;
     private float mBaseRotation;
 
+    private boolean mFlingEnabled = true;
     private boolean mZoomEnabled = true;
     private ScaleType mScaleType = ScaleType.FIT_CENTER;
 
@@ -137,10 +138,12 @@ public class PhotoViewAttacher implements View.OnTouchListener,
 
         @Override
         public void onFling(float startX, float startY, float velocityX, float velocityY) {
-            mCurrentFlingRunnable = new FlingRunnable(mImageView.getContext());
-            mCurrentFlingRunnable.fling(getImageViewWidth(mImageView),
-                getImageViewHeight(mImageView), (int) velocityX, (int) velocityY);
-            mImageView.post(mCurrentFlingRunnable);
+            if (mFlingEnabled) {
+                mCurrentFlingRunnable = new FlingRunnable(mImageView.getContext());
+                mCurrentFlingRunnable.fling(getImageViewWidth(mImageView),
+                        getImageViewHeight(mImageView), (int) velocityX, (int) velocityY);
+                mImageView.post(mCurrentFlingRunnable);
+            }
         }
 
         @Override
@@ -288,6 +291,10 @@ public class PhotoViewAttacher implements View.OnTouchListener,
         update();
         setRotationBy(mBaseRotation);
         checkAndDisplayMatrix();
+    }
+
+    public void setFlingable(boolean flingable) {
+        mFlingEnabled = flingable;
     }
 
     public void setRestrictToImageSize(boolean restrict) {
