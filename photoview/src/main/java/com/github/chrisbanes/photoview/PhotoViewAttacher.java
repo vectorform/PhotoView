@@ -62,6 +62,7 @@ public class PhotoViewAttacher implements View.OnTouchListener,
 
     private boolean mAllowParentInterceptOnEdge = true;
     private boolean mBlockParentIntercept = false;
+    private boolean mRestrictToImageSize = true;
 
     private ImageView mImageView;
 
@@ -287,6 +288,10 @@ public class PhotoViewAttacher implements View.OnTouchListener,
         update();
         setRotationBy(mBaseRotation);
         checkAndDisplayMatrix();
+    }
+
+    public void setRestrictToImageSize(boolean restrict) {
+        mRestrictToImageSize = restrict;
     }
 
     public void setRotationTo(float degrees) {
@@ -647,6 +652,9 @@ public class PhotoViewAttacher implements View.OnTouchListener,
     }
 
     private boolean checkMatrixBounds() {
+        if (!mRestrictToImageSize)
+            return true;
+
         final RectF rect = getDisplayRect(getDrawMatrix());
         if (rect == null) {
             return false;

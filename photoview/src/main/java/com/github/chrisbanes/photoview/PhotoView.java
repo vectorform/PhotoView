@@ -134,6 +134,10 @@ public class PhotoView extends AppCompatImageView {
         return changed;
     }
 
+    public void setRestrictToImageSize(boolean restrict) {
+        attacher.setRestrictToImageSize(restrict);
+    }
+
     public void setRotationTo(float rotationDegree) {
         attacher.setRotationTo(rotationDegree);
     }
