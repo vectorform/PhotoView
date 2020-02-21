@@ -62,7 +62,6 @@ public class PhotoViewAttacher implements View.OnTouchListener,
 
     private boolean mAllowParentInterceptOnEdge = true;
     private boolean mBlockParentIntercept = false;
-    private boolean mRestrictToImageSize = true;
 
     private ImageView mImageView;
 
@@ -96,6 +95,9 @@ public class PhotoViewAttacher implements View.OnTouchListener,
     private boolean mFlingEnabled = true;
     private boolean mZoomEnabled = true;
     private ScaleType mScaleType = ScaleType.FIT_CENTER;
+
+    private RectF constraintRect = null;
+    private Drawable constrainedDrawable = null;
 
     private OnGestureListener onGestureListener = new OnGestureListener() {
         @Override
@@ -293,12 +295,12 @@ public class PhotoViewAttacher implements View.OnTouchListener,
         checkAndDisplayMatrix();
     }
 
-    public void setFlingable(boolean flingable) {
-        mFlingEnabled = flingable;
+    public void setConstraintRect(RectF rect) {
+        constraintRect = rect;
     }
 
-    public void setRestrictToImageSize(boolean restrict) {
-        mRestrictToImageSize = restrict;
+    public void setFlingable(boolean flingable) {
+        mFlingEnabled = flingable;
     }
 
     public void setRotationTo(float degrees) {
@@ -505,6 +507,31 @@ public class PhotoViewAttacher implements View.OnTouchListener,
         if (mZoomEnabled) {
             // Update the base matrix using the current drawable
             updateBaseMatrix(mImageView.getDrawable());
+
+            if (constraintRect != null) {
+                Drawable image = mImageView.getDrawable();
+                if (image != null && image != constrainedDrawable) {
+                    constrainedDrawable = image;
+
+                    float height = image.getIntrinsicHeight();
+                    float width = image.getIntrinsicWidth();
+
+                    float heightScale = 1f;
+                    if (height < constraintRect.height()) {
+                        heightScale = constraintRect.height() / height;
+                    }
+
+                    float widthScale = 1f;
+                    if (width < constraintRect.width()) {
+                        widthScale = constraintRect.width() / width;
+                    }
+
+                    float scale = Math.max(widthScale, heightScale);
+                    setScale(scale, constraintRect.centerX(), constraintRect.centerY(), true);
+                    setScaleLevels(scale, scale * 2f, scale * 3f);
+                }
+            }
+
         } else {
             // Reset the Matrix...
             resetMatrix();
@@ -659,62 +686,77 @@ public class PhotoViewAttacher implements View.OnTouchListener,
     }
 
     private boolean checkMatrixBounds() {
-        if (!mRestrictToImageSize)
-            return true;
-
         final RectF rect = getDisplayRect(getDrawMatrix());
         if (rect == null) {
             return false;
         }
         final float height = rect.height(), width = rect.width();
         float deltaX = 0, deltaY = 0;
-        final int viewHeight = getImageViewHeight(mImageView);
-        if (height <= viewHeight) {
-            switch (mScaleType) {
-                case FIT_START:
-                    deltaY = -rect.top;
-                    break;
-                case FIT_END:
-                    deltaY = viewHeight - height - rect.top;
-                    break;
-                default:
-                    deltaY = (viewHeight - height) / 2 - rect.top;
-                    break;
+
+        if (constraintRect == null) {
+            final int viewHeight = getImageViewHeight(mImageView);
+            if (height <= viewHeight) {
+                switch (mScaleType) {
+                    case FIT_START:
+                        deltaY = -rect.top;
+                        break;
+                    case FIT_END:
+                        deltaY = viewHeight - height - rect.top;
+                        break;
+                    default:
+                        deltaY = (viewHeight - height) / 2 - rect.top;
+                        break;
+                }
+                mVerticalScrollEdge = VERTICAL_EDGE_BOTH;
+            } else if (rect.top > 0) {
+                mVerticalScrollEdge = VERTICAL_EDGE_TOP;
+                deltaY = -rect.top;
+            } else if (rect.bottom < viewHeight) {
+                mVerticalScrollEdge = VERTICAL_EDGE_BOTTOM;
+                deltaY = viewHeight - rect.bottom;
+            } else {
+                mVerticalScrollEdge = VERTICAL_EDGE_NONE;
             }
-            mVerticalScrollEdge = VERTICAL_EDGE_BOTH;
-        } else if (rect.top > 0) {
-            mVerticalScrollEdge = VERTICAL_EDGE_TOP;
-            deltaY = -rect.top;
-        } else if (rect.bottom < viewHeight) {
-            mVerticalScrollEdge = VERTICAL_EDGE_BOTTOM;
-            deltaY = viewHeight - rect.bottom;
-        } else {
-            mVerticalScrollEdge = VERTICAL_EDGE_NONE;
-        }
-        final int viewWidth = getImageViewWidth(mImageView);
-        if (width <= viewWidth) {
-            switch (mScaleType) {
-                case FIT_START:
-                    deltaX = -rect.left;
-                    break;
-                case FIT_END:
-                    deltaX = viewWidth - width - rect.left;
-                    break;
-                default:
-                    deltaX = (viewWidth - width) / 2 - rect.left;
-                    break;
+            final int viewWidth = getImageViewWidth(mImageView);
+            if (width <= viewWidth) {
+                switch (mScaleType) {
+                    case FIT_START:
+                        deltaX = -rect.left;
+                        break;
+                    case FIT_END:
+                        deltaX = viewWidth - width - rect.left;
+                        break;
+                    default:
+                        deltaX = (viewWidth - width) / 2 - rect.left;
+                        break;
+                }
+                mHorizontalScrollEdge = HORIZONTAL_EDGE_BOTH;
+            } else if (rect.left > 0) {
+                mHorizontalScrollEdge = HORIZONTAL_EDGE_LEFT;
+                deltaX = -rect.left;
+            } else if (rect.right < viewWidth) {
+                deltaX = viewWidth - rect.right;
+                mHorizontalScrollEdge = HORIZONTAL_EDGE_RIGHT;
+            } else {
+                mHorizontalScrollEdge = HORIZONTAL_EDGE_NONE;
             }
-            mHorizontalScrollEdge = HORIZONTAL_EDGE_BOTH;
-        } else if (rect.left > 0) {
-            mHorizontalScrollEdge = HORIZONTAL_EDGE_LEFT;
-            deltaX = -rect.left;
-        } else if (rect.right < viewWidth) {
-            deltaX = viewWidth - rect.right;
-            mHorizontalScrollEdge = HORIZONTAL_EDGE_RIGHT;
+            // Finally actually translate the matrix
+
         } else {
-            mHorizontalScrollEdge = HORIZONTAL_EDGE_NONE;
+            deltaX = 0;
+            if (constraintRect.left < rect.left)
+                deltaX += constraintRect.left - rect.left;
+
+            if (constraintRect.right > rect.right)
+                deltaX += constraintRect.right - rect.right;
+
+            if (constraintRect.top < rect.top)
+                deltaY += constraintRect.top - rect.top;
+
+            if (constraintRect.bottom > rect.bottom)
+                deltaY += constraintRect.bottom - rect.bottom;
         }
-        // Finally actually translate the matrix
+
         mSuppMatrix.postTranslate(deltaX, deltaY);
         return true;
     }

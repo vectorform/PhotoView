@@ -134,10 +134,9 @@ public class PhotoView extends AppCompatImageView {
         return changed;
     }
 
-    public void setRestrictToImageSize(boolean restrict) {
-        //also makes sense to disable fling since we really have no max or min fling to work on without a boundary
-        attacher.setRestrictToImageSize(restrict);
-        attacher.setFlingable(restrict);
+    public void constraintToRect(RectF rect) {
+        attacher.setConstraintRect(rect);
+        setFlingable(false);
     }
 
     public void setFlingable(boolean flingable) {
