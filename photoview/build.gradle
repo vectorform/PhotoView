@@ -43,7 +43,7 @@ project.afterEvaluate {
             aar(MavenPublication) {
                 groupId 'com.vectorform.vfandroid'
                 artifactId 'photoview'
-                version '1.0.3'
+                version '1.0.5'
 
                 artifact bundleReleaseAar
                 artifact androidJavadocsJar

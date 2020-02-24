@@ -97,7 +97,6 @@ public class PhotoViewAttacher implements View.OnTouchListener,
     private ScaleType mScaleType = ScaleType.FIT_CENTER;
 
     private RectF constraintRect = null;
-    private Drawable constrainedDrawable = null;
 
     private OnGestureListener onGestureListener = new OnGestureListener() {
         @Override
@@ -510,28 +509,27 @@ public class PhotoViewAttacher implements View.OnTouchListener,
 
             if (constraintRect != null) {
                 Drawable image = mImageView.getDrawable();
-                if (image != null && image != constrainedDrawable) {
-                    constrainedDrawable = image;
+                if (image != null) {
 
                     float height = image.getIntrinsicHeight();
                     float width = image.getIntrinsicWidth();
+                    final float scale = Math.max(constraintRect.width() / width, constraintRect.height() / height);
 
-                    float heightScale = 1f;
-                    if (height < constraintRect.height()) {
-                        heightScale = constraintRect.height() / height;
-                    }
+                    setScaleLevels(scale, scale * 3f, scale * 6f);
+                    mImageView.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            float[] values = new float[9];
+                            mBaseMatrix.getValues(values);
+                            values[Matrix.MSCALE_X] = 1f;
+                            values[Matrix.MSCALE_Y] = 1f;
+                            mBaseMatrix.setValues(values);
 
-                    float widthScale = 1f;
-                    if (width < constraintRect.width()) {
-                        widthScale = constraintRect.width() / width;
-                    }
-
-                    float scale = Math.max(widthScale, heightScale);
-                    setScale(scale, constraintRect.centerX(), constraintRect.centerY(), true);
-                    setScaleLevels(scale, scale * 2f, scale * 3f);
+                            setScale(scale, false);
+                        }
+                    });
                 }
             }
-
         } else {
             // Reset the Matrix...
             resetMatrix();
@@ -743,7 +741,6 @@ public class PhotoViewAttacher implements View.OnTouchListener,
             // Finally actually translate the matrix
 
         } else {
-            deltaX = 0;
             if (constraintRect.left < rect.left)
                 deltaX += constraintRect.left - rect.left;
 

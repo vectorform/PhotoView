@@ -27,6 +27,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.github.chrisbanes.photoview.CircleTesterView;
 import com.github.chrisbanes.photoview.OnMatrixChangedListener;
 import com.github.chrisbanes.photoview.OnPhotoTapListener;
 import com.github.chrisbanes.photoview.OnSingleFlingListener;
@@ -44,6 +45,7 @@ public class SimpleSampleActivity extends AppCompatActivity {
     static final String SCALE_TOAST_STRING = "Scaled to: %.2ff";
     static final String FLING_LOG_STRING = "Fling velocityX: %.2f, velocityY: %.2f";
 
+    private CircleTesterView mCircleTester;
     private PhotoView mPhotoView;
     private TextView mCurrMatrixTv;
 
@@ -129,11 +131,16 @@ public class SimpleSampleActivity extends AppCompatActivity {
                 return false;
             }
         });
+
+
+
         mPhotoView = findViewById(R.id.iv_photo);
         mCurrMatrixTv = findViewById(R.id.tv_current_matrix);
+        mCircleTester = findViewById(R.id.circleTester);
 
-        Drawable bitmap = ContextCompat.getDrawable(this, R.drawable.wallpaper);
+        Drawable bitmap = ContextCompat.getDrawable(this, R.drawable.small_test);
         mPhotoView.setImageDrawable(bitmap);
+        mPhotoView.constraintToRect(mCircleTester.boundingRect);
 
         // Lets attach some listeners, not required though!
         mPhotoView.setOnMatrixChangeListener(new MatrixChangeListener());
